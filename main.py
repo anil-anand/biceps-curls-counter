@@ -21,8 +21,11 @@ def calculate_angle(a, b, c):
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
-counter = 0     # variable to store the curl count
-stage = None    # variable to store the status of the curl: up/down
+leftcounter = 0     # variable to store the curl count of the left hand
+leftstage = None    # variable to store the status of the curl: up/down (left hand)
+
+rightcounter = 0     # variable to store the curl count of the right hand
+rightstage = None    # variable to store the status of the curl: up/down (right hand)
 
 cap  = cv2.VideoCapture(0)
 
@@ -45,35 +48,62 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
             landmarks = results.pose_landmarks.landmark  # Extract landmarks from the current frame
 
-            shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]  # Take the x and y coordinates of shoulder,
-            elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]           # elbow and wrist to calculate the angle 
-            wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]           # between the lower and upper arms.
+            leftshoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]  # Take the x and y coordinates of shoulder, elbow
+            leftelbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]           # and wrist of the left hand to calculate the angle 
+            leftwrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]           # between the lower and upper arms (left).
 
-            angle = calculate_angle(shoulder, elbow, wrist)  # Calculate the angle between the lower and upper arms
+            rightshoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]  # Take the x and y coordinates of shoulder, elbow
+            rightelbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]           # and wrist of the right hand to calculate the  
+            rightwrist = [landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y]           # angle between the lower and upper arms (right).
+            
+            
+            leftangle = calculate_angle(leftshoulder, leftelbow, leftwrist)  # Calculate the angle between the lower and upper arms of the left hand
+            rightangle = calculate_angle(rightshoulder, rightelbow, rightwrist)  # Calculate the angle between the lower and upper arms of the right hand
 
-            cv2.putText(image, str(angle), tuple(np.multiply(elbow, [640, 480]).astype(int)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)     # Print the angle in the webcam output
+            cv2.putText(image, str(leftangle), tuple(np.multiply(leftelbow, [640, 480]).astype(int)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)     # Print the angle in the webcam output
+            cv2.putText(image, str(rightangle), tuple(np.multiply(rightelbow, [640, 480]).astype(int)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)     # Print the angle in the webcam output
 
-            if(angle > 160):                            #  Calculate/update
-                stage = 'Down'                          #  the values of
-            elif(angle < 30 and stage == 'Down'):       #  counter and
-                counter += 1                            #  stage variables
-                stage = 'Up'                            #  for each frame
+
+
+            if(leftangle > 160):                            #  Calculate/update
+                leftstage = 'Down'                          #  the values of
+            elif(leftangle < 45 and leftstage == 'Down'):   #  counter and stage
+                leftcounter += 1                            #  variables of the left
+                leftstage = ' Up'                           #  hand for each frame
+
+            if(rightangle > 160):                            #  Calculate/update
+                rightstage = 'Down'                          #  the values of
+            elif(rightangle < 45 and rightstage == 'Down'):  #  counter and stage
+                rightcounter += 1                            #  variables of the right
+                rightstage = ' Up'                           #  hand for each frame
+
+
+
 
             cv2.rectangle(image, (0, 0), (225, 73), (225,95, 50), -1)   # Plot a rectangle at the top left corner
 
             cv2.rectangle(image, (415, 0), (640, 73), (225,95, 50), -1) # Plot a rectangle at the top right corner
 
-            cv2.putText(image, 'Curls', (15, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)           # Print the number
-                                                                                                                    # of curls in the 
-            cv2.putText(image, str(counter), (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 2, (255,255,255), 2, cv2.LINE_AA)  # left box
+
+
+            cv2.putText(image, 'Left Hand', (65, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA) # Text headings
+            cv2.putText(image, 'Curls', (15, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)     # in the left
+            cv2.putText(image, 'Stage', (160, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)    # hand box
+
+
+            cv2.putText(image, str(leftcounter), (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.25, (255,255,255), 2, cv2.LINE_AA) # Curl count and stage
+            cv2.putText(image, leftstage, (140, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)          # for the left hand
 
             
             
-            cv2.putText(image, 'Stage', (430, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)      # Print the hand
-                                                                                                                # up/down status in
-            cv2.putText(image, stage, (425, 60), cv2.FONT_HERSHEY_SIMPLEX, 2, (255,255,255), 2, cv2.LINE_AA)    # the right box
+            cv2.putText(image, 'Right Hand', (480, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA) # Text headings
+            cv2.putText(image, 'Curls', (425, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)      # in the right
+            cv2.putText(image, 'Stage', (570, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)      # hand box
+           
 
-
+            cv2.putText(image, str(rightcounter), (430, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.25, (255,255,255), 2, cv2.LINE_AA) # Curl count and stage
+            cv2.putText(image, rightstage, (550, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)           # for the right hand
+           
 
         except:
             pass
@@ -82,7 +112,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
         cv2.imshow('Raw webcam feed', image) # Output camera feed through opencv
 
-        if(cv2.waitKey(10) & 0xFF == ord('q')):
+        if(cv2.waitKey(10) & 0xFF == ord('q')): # Exit when the key 'q' is pressed on the keyboard
             break
 
 cv2.release()
